@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+[[ "$SWAYSOCK" ]] && {
+
+    # 多长时间后休眠
+    TIMEOUT=3600 # 60分钟
+
+    # 这里存放你的图片路径
+    BACKGROUND_COLLECTION=/home/xuantu/Pictures/wallpapers
+
+    # 下面是随机选取图片作为背景的功能
+    BACKGROUND=$( ls $BACKGROUND_COLLECTION | shuf -n 1)
+
+    case "$1" in
+        lock-now)
+            BG='&'
+            [[ "$2" == "wait" ]] && BG=''
+            swaylock -f --image "$BACKGROUND_COLLECTION/$BACKGROUND"
+            ;;
+
+        lock-off)
+            pkill swayidle
+            swayidle -w \
+                timeout $TIMEOUT "swaymsg 'output * dpms off'" \
+                resume "swaymsg 'output * dpms on'" \
+                before-sleep "mylock lock-now wait; mylock enable-lock" &
+            rofi -width 20 -e "screen lock disabled"
+
+            # 5分钟后发送提示
+            (sleep 300; notify-send "屏幕锁定将在5分钟后重新启用" "请注意！") &
+            ;;
+
+        enable-lock|*)
+            pkill swayidle
+            notify-send "mylock 脚本已启动" "$(printf "自动关闭屏幕电源时间设置为 %s" "$TIMEOUT 秒")"
+            swayidle -w \
+                timeout $TIMEOUT "swaymsg 'output * dpms off'" resume "swaymsg 'output * dpms on'" \
+                timeout $(( TIMEOUT * 2 )) "swaymsg 'output * dpms on'; mylock lock-now" \
+                timeout $(( TIMEOUT * 3 )) "swaymsg 'output * dpms off'" resume "swaymsg 'output * dpms on'" \
+                timeout $(( TIMEOUT * 4 )) "sudo systemctl suspend" \
+                before-sleep "mylock lock-now wait" &
+            ;;
+    esac
+
+    exit $?
+}
