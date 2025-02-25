@@ -1,2 +1,1 @@
-# ManjaroSway_XT
-xuantu 的 sway manjaro 配置文件以及个人使用脚本   
+XuanTu 的 Sway Manjaro 个人配置文件及脚本      
